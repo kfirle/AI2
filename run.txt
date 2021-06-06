@@ -1,0 +1,1 @@
+python main.py -player1 ImprovedGreedyMovePlayer -player2 RandomIndexPlayer
