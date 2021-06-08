@@ -52,6 +52,10 @@ def evaluation_function2(board):
     + 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
 
 
+def simple_evaluation_function(board):
+    return 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
+
+
 def get_empty_indices(board) -> [(int,int)]:
     empty = []
     for i in range(0,len(board)):
