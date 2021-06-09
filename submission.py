@@ -18,6 +18,9 @@ commands = {Move.UP: logic.up, Move.DOWN: logic.down,
 
 MAX_PLAYER = 0
 MIN_PLAYER = 1
+PROB_STATE = 2
+TWO_PROBABILITY = 0.9
+FOUR_PROBABILITY = 0.1
 victory_value = 2048
 time_margin = 0.05
 
@@ -272,11 +275,12 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    #move_value = self.rec_minmax(depth - 1, new_board, evaluation_function2(new_board))
                     if time.time() - self.iteration_start_time < time_limit - time_margin:
-                        local_start = time.time()
-                        move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
-                        #print("Move time: " + str(time.time()-local_start) + " depth: " + str(depth))
+                        # local_start = time.time()
+                        # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function2(new_board))
+                        # move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
+                        move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, simple_evaluation_function(new_board))
+                        # print("Move time: " + str(time.time()-local_start) + " depth: " + str(depth))
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
                     else:
@@ -313,7 +317,8 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     #optional_moves_score[move] = new_board, evaluation_function2(new_board)
-                    optional_moves_score[move] = new_board, moveGrader(new_board)
+                    #optional_moves_score[move] = new_board, moveGrader(new_board)
+                    optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
             return return_max([self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1])\
                                for move1 in optional_moves_score])
         # minimize
@@ -352,17 +357,19 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
         while time.time() - self.iteration_start_time < time_limit - time_margin:
             optional_index_score = {}
             depth += 1
-            # score = board_score_calc(board)
+            score = board_score_calc(board)
             for tup in empty:
                 new_board = deepcopy(board)
                 i = int(tup[0])
                 j = int(tup[1])
                 new_board[i][j] = 2
-                #move_value = self.rec_minmax(depth - 1, new_board, evaluation_function(new_board, score))
                 if time.time() - self.iteration_start_time < time_limit - time_margin:
-                    local_start = time.time()
-                    move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
-                    #print("Index time: " + str(time.time() - local_start) + " depth: " + str(depth))
+                    # local_start = time.time()
+                    # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function(new_board, score))
+                    #move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
+                    #move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
+                    move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, score)
+                    # print("Index time: " + str(time.time() - local_start) + " depth: " + str(depth))
                     if move_value <= np.inf:
                         optional_index_score[(i,j)] = move_value
                 else:
@@ -407,7 +414,9 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     #optional_moves_score[move] = new_board, evaluation_function(new_board, score)
-                    optional_moves_score[move] = new_board, moveGrader(new_board)
+                    #optional_moves_score[move] = new_board, moveGrader(new_board)
+                    #optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
+                    optional_moves_score[move] = new_board, score
             return return_max([self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1])\
                                for move1 in optional_moves_score])
 
@@ -428,7 +437,7 @@ class ABMovePlayer(AbstractMovePlayer):
 
     def get_move(self, board, time_limit) -> Move:
         # TODO: erase the following line and implement this function.
-        file = open(r'C:\Users\kfir2\Documents\ab_player_1_sec.txt', 'a')
+        file = open(r'C:\Users\kfir2\Documents\ab_player_2_sec.txt', 'a')
         temp_max = Move.UP
         depth = 0
         alpha = -np.inf
@@ -443,7 +452,9 @@ class ABMovePlayer(AbstractMovePlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     if time.time() - self.iteration_start_time < time_limit - time_margin:
-                        move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
+                        #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
+                        move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
+                        #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
                         #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
@@ -480,7 +491,9 @@ class ABMovePlayer(AbstractMovePlayer):
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
+                    v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
+                    #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
+                    #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
                     #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
                     curMax = max(curMax,v)
                     alpha = max(curMax,alpha)
@@ -496,7 +509,9 @@ class ABMovePlayer(AbstractMovePlayer):
                 i = int(tup[0])
                 j = int(tup[1])
                 new_board[i][j] = 2
-                v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, evaluation_function2(new_board))
+                v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, eval_value)
+                #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, simple_evaluation_function(new_board))
+                #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, evaluation_function2(new_board))
                 #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, moveGrader(new_board))
                 curMin = min(curMin, v)
                 beta = min(curMin, beta)
@@ -513,12 +528,77 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
+        self.iteration_start_time = None
+        self.iteration_time = 1
+        self.timeout_flag = False
 
     def get_move(self, board, time_limit) -> Move:
         # TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        temp_max = Move.UP
+        depth = 0
+        self.iteration_start_time = time.time()
+        self.iteration_time = time_limit
+        self.timeout_flag = False
+        while time.time() - self.iteration_start_time < time_limit - time_margin:
+            optional_moves_score = {}
+            depth += 1
+            for move in Move:
+                new_board, done, score = commands[move](board)
+                if done:
+                    if time.time() - self.iteration_start_time < time_limit - time_margin:
+                        # move_value = self.rec_expect(depth - 1, new_board, evaluation_function2(new_board))
+                        move_value = self.rec_expect(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
+                        # move_value = self.rec_expect(depth - 1, new_board, PROB_STATE, simple_evaluation_function(new_board))
+                        if move_value >= -np.inf:
+                            optional_moves_score[move] = move_value
+                    else:
+                        return temp_max
+            if self.timeout_flag is False:
+                temp_max = max(optional_moves_score, key=optional_moves_score.get)
+        return temp_max
 
     # TODO: add here helper functions in class, if needed
+    def rec_expect(self, depth, board, player, eval_value, index_value=2):
+        """
+        a recursive algorithm to calculate minimax algorithm
+        :param depth: tracking our depth in the tree
+        :param game_state: A stateof the game
+        :param player: 0 - player, 1 - opponent
+        :return: value of the state according to minimax
+        """
+        # if no time left
+        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+            self.timeout_flag = True
+            return eval_value
+
+        if depth == 0:  #or is_final_state(board):
+            return eval_value
+        # maximize
+        if player == MAX_PLAYER:
+            optional_moves_score = {}
+            for move in Move:
+                new_board, done, score = commands[move](board)
+                if done:
+                    # optional_moves_score[move] = new_board, evaluation_function2(new_board)
+                    optional_moves_score[move] = new_board, moveGrader(new_board)
+                    # optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
+            return return_max([self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1])\
+                               for move1 in optional_moves_score])
+        # minimize
+        elif player == MIN_PLAYER:
+            index_next_boards = []
+            for tup in get_empty_indices(board):
+                new_board = deepcopy(board)
+                i = int(tup[0])
+                j = int(tup[1])
+                new_board[i][j] = index_value
+                index_next_boards.append(new_board)
+            return return_min([self.rec_expect(depth - 1, new_board, MAX_PLAYER, eval_value) \
+                                    for new_board in index_next_boards])
+        #prob
+        else:
+            return TWO_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 2) + \
+                   FOUR_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 4)
 
 
 class ExpectimaxIndexPlayer(AbstractIndexPlayer):
@@ -529,13 +609,82 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
     def __init__(self):
         AbstractIndexPlayer.__init__(self)
         # TODO: add here if needed
+        self.iteration_start_time = None
+        self.iteration_time = 1
+        self.timeout_flag = False
 
     def get_indices(self, board, value, time_limit) -> (int, int):
         # TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        depth = 0
+        empty = get_empty_indices(board)
+        temp_min = empty[0]
+        self.iteration_start_time = time.time()
+        self.iteration_time = time_limit
+        self.timeout_flag = False
+        while time.time() - self.iteration_start_time < time_limit - time_margin:
+            optional_index_score = {}
+            depth += 1
+            score = board_score_calc(board)
+            for tup in empty:
+                new_board = deepcopy(board)
+                i = int(tup[0])
+                j = int(tup[1])
+                new_board[i][j] = value
+                if time.time() - self.iteration_start_time < time_limit - time_margin:
+                    # move_value = self.rec_expect(depth - 1, new_board, evaluation_function(new_board, score))
+                    move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
+                    # move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
+                    #move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, score)
+                    if move_value <= np.inf:
+                        optional_index_score[(i, j)] = move_value
+                else:
+                    return temp_min
+            if self.timeout_flag is False:
+                temp_min = min(optional_index_score, key=optional_index_score.get)
+        return temp_min
 
     # TODO: add here helper functions in class, if needed
+    def rec_expect(self, depth, board, player, eval_value, index_value=2):
+        """
+        a recursive algorithm to calculate minimax algorithm
+        :param depth: tracking our depth in the tree
+        :param game_state: A stateof the game
+        :param player: 0 - player, 1 - opponent
+        :return: value of the state according to minimax
+        """
+        # if no time left
+        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+            self.timeout_flag = True
+            return eval_value
 
+        if depth == 0:  #or is_final_state(board):
+            return eval_value
+        # maximize
+        if player == MAX_PLAYER:
+            optional_moves_score = {}
+            for move in Move:
+                new_board, done, score = commands[move](board)
+                if done:
+                    #optional_moves_score[move] = new_board, evaluation_function2(new_board)
+                    optional_moves_score[move] = new_board, moveGrader(new_board)
+                    #optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
+            return return_max([self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1])\
+                               for move1 in optional_moves_score])
+        # minimize
+        elif player == MIN_PLAYER:
+            index_next_boards = []
+            for tup in get_empty_indices(board):
+                new_board = deepcopy(board)
+                i = int(tup[0])
+                j = int(tup[1])
+                new_board[i][j] = index_value
+                index_next_boards.append(new_board)
+            return return_min([self.rec_expect(depth - 1, new_board, MAX_PLAYER, eval_value) \
+                                    for new_board in index_next_boards])
+        #prob
+        else:
+            return TWO_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 2) + \
+                   FOUR_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 4)
 
 # Tournament
 class ContestMovePlayer(AbstractMovePlayer):
