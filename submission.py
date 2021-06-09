@@ -22,7 +22,7 @@ PROB_STATE = 2
 TWO_PROBABILITY = 0.9
 FOUR_PROBABILITY = 0.1
 victory_value = 2048
-time_margin = 0.05
+TIME_MARGIN = 0.005
 
 
 def empty_cells_calc(board) -> int:
@@ -269,13 +269,13 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
         self.iteration_start_time = time.time()
         self.iteration_time = time_limit
         self.timeout_flag = False
-        while time.time() - self.iteration_start_time < time_limit - time_margin:
+        while time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
             optional_moves_score = {}
             depth += 1
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    if time.time() - self.iteration_start_time < time_limit - time_margin:
+                    if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                         # local_start = time.time()
                         # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function2(new_board))
                         # move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
@@ -304,7 +304,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
         :return: value of the state according to minimax
         """
         # if no time left
-        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+        if time.time() - self.iteration_start_time >= self.iteration_time - TIME_MARGIN:
             self.timeout_flag = True
             return eval_value
 
@@ -333,6 +333,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             return return_min([self.rec_minmax(depth - 1, new_board, MAX_PLAYER, eval_value) \
                                     for new_board in index_next_boards])
 
+
 class MiniMaxIndexPlayer(AbstractIndexPlayer):
     """MiniMax Index Player,
     this player is the opponent of the move player and need to return the indices on the board where to put 2.
@@ -354,7 +355,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
         self.iteration_start_time = time.time()
         self.iteration_time = time_limit
         self.timeout_flag = False
-        while time.time() - self.iteration_start_time < time_limit - time_margin:
+        while time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
             optional_index_score = {}
             depth += 1
             score = board_score_calc(board)
@@ -363,7 +364,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
                 i = int(tup[0])
                 j = int(tup[1])
                 new_board[i][j] = 2
-                if time.time() - self.iteration_start_time < time_limit - time_margin:
+                if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                     # local_start = time.time()
                     # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function(new_board, score))
                     #move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
@@ -389,7 +390,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
         """
 
         # if no time left
-        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+        if time.time() - self.iteration_start_time >= self.iteration_time - TIME_MARGIN:
             self.timeout_flag = True
             return eval_value
 
@@ -445,13 +446,13 @@ class ABMovePlayer(AbstractMovePlayer):
         self.iteration_start_time = time.time()
         self.iteration_time = time_limit
         self.timeout_flag = False
-        while time.time() - self.iteration_start_time < time_limit - time_margin:
+        while time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
             optional_moves_score = {}
             depth += 1
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    if time.time() - self.iteration_start_time < time_limit - time_margin:
+                    if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                         #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
                         move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
                         #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
@@ -478,7 +479,7 @@ class ABMovePlayer(AbstractMovePlayer):
         :return: value of the state according to minimax
         """
         # if no time left
-        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+        if time.time() - self.iteration_start_time >= self.iteration_time - TIME_MARGIN:
             self.timeout_flag = True
             return eval_value
 
@@ -519,6 +520,7 @@ class ABMovePlayer(AbstractMovePlayer):
                     return -np.inf
             return curMin
 
+
 # part D
 class ExpectimaxMovePlayer(AbstractMovePlayer):
     """Expectimax Move Player,
@@ -539,13 +541,13 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
         self.iteration_start_time = time.time()
         self.iteration_time = time_limit
         self.timeout_flag = False
-        while time.time() - self.iteration_start_time < time_limit - time_margin:
+        while time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
             optional_moves_score = {}
             depth += 1
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    if time.time() - self.iteration_start_time < time_limit - time_margin:
+                    if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                         # move_value = self.rec_expect(depth - 1, new_board, evaluation_function2(new_board))
                         move_value = self.rec_expect(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
                         # move_value = self.rec_expect(depth - 1, new_board, PROB_STATE, simple_evaluation_function(new_board))
@@ -567,7 +569,7 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
         :return: value of the state according to minimax
         """
         # if no time left
-        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+        if time.time() - self.iteration_start_time >= self.iteration_time - TIME_MARGIN:
             self.timeout_flag = True
             return eval_value
 
@@ -621,7 +623,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
         self.iteration_start_time = time.time()
         self.iteration_time = time_limit
         self.timeout_flag = False
-        while time.time() - self.iteration_start_time < time_limit - time_margin:
+        while time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
             optional_index_score = {}
             depth += 1
             score = board_score_calc(board)
@@ -630,7 +632,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
                 i = int(tup[0])
                 j = int(tup[1])
                 new_board[i][j] = value
-                if time.time() - self.iteration_start_time < time_limit - time_margin:
+                if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                     # move_value = self.rec_expect(depth - 1, new_board, evaluation_function(new_board, score))
                     move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
                     # move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
@@ -653,7 +655,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
         :return: value of the state according to minimax
         """
         # if no time left
-        if time.time() - self.iteration_start_time >= self.iteration_time - time_margin:
+        if time.time() - self.iteration_start_time >= self.iteration_time - TIME_MARGIN:
             self.timeout_flag = True
             return eval_value
 
