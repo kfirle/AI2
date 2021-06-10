@@ -22,7 +22,7 @@ PROB_STATE = 2
 TWO_PROBABILITY = 0.9
 FOUR_PROBABILITY = 0.1
 victory_value = 2048
-TIME_MARGIN = 0.005
+TIME_MARGIN = 0.01
 
 
 def empty_cells_calc(board) -> int:
@@ -47,21 +47,21 @@ def board_score_calc(board) -> int:
 
 def evaluation_function(board, score):
     return math.log2(score + 2) * (empty_cells_calc(board)) \
-    + 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
+           + 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
 
 
 def evaluation_function2(board):
     return math.log2(board_score_calc(board) + 2) * (empty_cells_calc(board)) \
-    + 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
+           + 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
 
 
 def simple_evaluation_function(board):
     return 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
 
 
-def get_empty_indices(board) -> [(int,int)]:
+def get_empty_indices(board) -> [(int, int)]:
     empty = []
-    for i in range(0,len(board)):
+    for i in range(0, len(board)):
         for j in range(0, len(board)):
             if board[i][j] == 0:
                 empty.append((i, j))
@@ -71,7 +71,7 @@ def get_empty_indices(board) -> [(int,int)]:
 def is_final_state(board) -> bool:
     empty_cells = 0
     max_val = 0
-    for i in range(0,len(board)):
+    for i in range(0, len(board)):
         for j in range(0, len(board)):
             if board[i][j] == 0:
                 empty_cells += 1
@@ -108,57 +108,57 @@ def gradient(board):
     are equal, the function will return 0. Otherwise, it will return
     the inverse of sum of all differences (in absolute value) between neighbours in the grid.
     """
-    simpleGrid = [[0 for i in range(4)] for j in range(4)]
+    log_grid = [[0 for i in range(4)] for j in range(4)]
     for row in range(0, 4):
         for col in range(0, 4):
-            simpleGrid[row][col] = board[row][col]
+            log_grid[row][col] = board[row][col]
 
     bonus = 0
     for row in range(4):
         for col in range(4):
-            if simpleGrid[row][col] != 0:
-                if simpleGrid[row][3] != 0:
-                    bonus += abs(math.log2(simpleGrid[row][col]) - math.log2(
-                        simpleGrid[row][3]))
-                if simpleGrid[3][col] != 0:
-                    bonus += abs(math.log2(simpleGrid[row][col]) - math.log2(
-                        simpleGrid[3][col]))
+            if log_grid[row][col] != 0:
+                if log_grid[row][3] != 0:
+                    bonus += abs(math.log2(log_grid[row][col]) - math.log2(
+                        log_grid[row][3]))
+                if log_grid[3][col] != 0:
+                    bonus += abs(math.log2(log_grid[row][col]) - math.log2(
+                        log_grid[3][col]))
 
     return -bonus
 
 
 def direction(board):
     """ Calculates how much the grid is organized in some direction. """
-    simpleGrid = [[0 for i in range(4)] for j in range(4)]
-    for row in range(0,4):
-        for col in range(0,4):
-            if(board[row][col] != 0):
-                simpleGrid[row][col] = math.log2(board[row][col])
+    log_grid = [[0 for i in range(4)] for j in range(4)]
+    for row in range(0, 4):
+        for col in range(0, 4):
+            if board[row][col] != 0:
+                log_grid[row][col] = math.log2(board[row][col])
             else:
-                simpleGrid[row][col] = 0
+                log_grid[row][col] = 0
 
-    asndud = 0
-    dsndud = 0
-    asndlr = 0
-    dsndlr = 0
+    asc_vertical = 0  # Ascending up-down
+    desc_vertical = 0  # Descending up-down
+    asc_horizontal = 0  # Ascending left-right
+    desc_horizontal = 0  # Descending left-right
     for row in range(4):
         for col in range(4):
             if col + 1 < 4:
-                if simpleGrid[row][col] > simpleGrid[row][col + 1]:
-                    dsndlr -= simpleGrid[row][col] - simpleGrid[row][col + 1]
+                if log_grid[row][col] > log_grid[row][col + 1]:
+                    desc_horizontal -= log_grid[row][col] - log_grid[row][col + 1]
                 else:
-                    asndlr += simpleGrid[row][col] - simpleGrid[row][col + 1]
+                    asc_horizontal += log_grid[row][col] - log_grid[row][col + 1]
             if row + 1 < 4:
-                if simpleGrid[row][col] > simpleGrid[row + 1][col]:
-                    dsndud -= simpleGrid[row][col] - simpleGrid[row + 1][col]
+                if log_grid[row][col] > log_grid[row + 1][col]:
+                    desc_vertical -= log_grid[row][col] - log_grid[row + 1][col]
                 else:
-                    asndud += simpleGrid[row][col] - simpleGrid[row + 1][col]
-    return max(dsndlr, asndlr) + max(dsndud, asndud)
+                    asc_vertical += log_grid[row][col] - log_grid[row + 1][col]
+    return max(desc_horizontal, asc_horizontal) + max(desc_vertical, asc_vertical)
 
 
 def highestTile(board):
     """ Returns the maximal tile. """
-    maximal =  max(max(x) for x in board)
+    maximal = max(max(x) for x in board)
     return maximal
 
 
@@ -182,9 +182,85 @@ def moveGrader(board):
     empty = empty_cells_calc(board)
     if empty != 0:
         empty = math.log(empty)
-    val = emptFact * empty + highestFact * highest + h_score(board) * scoregrade + direction(board) * directionFac\
+    val = emptFact * empty + highestFact * highest + h_score(board) * scoregrade + direction(board) * directionFac \
           + gradient(board) * gradientFac
     return val
+
+
+def best_heuristic(board):
+    """
+    Weights for the different Heuristics
+    """
+    empty_weight = 25
+    highest_weight = 10
+    score_weight = 14
+    uniformity_weight = 1
+    direction_weight = 15
+
+    # Calc Highest Tile Score
+    highest_score = max(max(x) for x in board) * highest_weight
+
+    # Calc Empty Cells Score
+    empty_cells = 0
+    for i in range(0, len(board)):
+        for j in range(0, len(board)):
+            if board[i][j] == 0:
+                empty_cells += 1
+    if empty_cells != 0:
+        empty_cells = math.log(empty_cells)
+    empty_score = empty_cells * empty_weight
+
+    # Calc Score (heuristic) Score
+    score = 0
+    for row in range(0, 4):
+        for col in range(0, 4):
+            if board[row][col] != 0:
+                score -= math.log2(board[row][col])
+    score_score = score * score_weight
+
+    # Calc Direction Score
+    log_grid = [[0 for i in range(4)] for j in range(4)]
+    for row in range(0, 4):
+        for col in range(0, 4):
+            if board[row][col] != 0:
+                log_grid[row][col] = math.log2(board[row][col])
+            else:
+                log_grid[row][col] = 0
+
+    asc_vertical = 0
+    desc_vertical = 0
+    asc_horizontal = 0
+    desc_horizontal = 0
+    for row in range(4):
+        for col in range(4):
+            if col + 1 < 4:
+                if log_grid[row][col] > log_grid[row][col + 1]:
+                    desc_horizontal -= log_grid[row][col] - log_grid[row][col + 1]
+                else:
+                    asc_horizontal += log_grid[row][col] - log_grid[row][col + 1]
+            if row + 1 < 4:
+                if log_grid[row][col] > log_grid[row + 1][col]:
+                    desc_vertical -= log_grid[row][col] - log_grid[row + 1][col]
+                else:
+                    asc_vertical += log_grid[row][col] - log_grid[row + 1][col]
+    direction_score = (max(desc_horizontal, asc_horizontal) + max(desc_vertical, asc_vertical)) * direction_weight
+
+    # Calc Uniformity Score
+    copy_grid = deepcopy(board)
+    bonus = 0
+    for row in range(4):
+        for col in range(4):
+            if copy_grid[row][col] != 0:
+                if copy_grid[row][3] != 0:
+                    bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
+                        copy_grid[row][3]))
+                if copy_grid[3][col] != 0:
+                    bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
+                        copy_grid[3][col]))
+
+    uniformity_score = -bonus * uniformity_weight
+
+    return empty_score + direction_score + score_score + highest_score + uniformity_score
 
 
 # generate value between {2,4} with probability p for 4
@@ -197,6 +273,7 @@ class GreedyMovePlayer(AbstractMovePlayer):
     the player receives time limit for a single step and the board as parameter and return the next move that gives
     the best score by looking one step ahead.
     """
+
     def get_move(self, board, time_limit) -> Move:
         optional_moves_score = {}
         for move in Move:
@@ -212,6 +289,7 @@ class RandomIndexPlayer(AbstractIndexPlayer):
     the player receives time limit for a single step and the board as parameter and return the next indices to
     put 2 randomly.
     """
+
     def get_indices(self, board, value, time_limit) -> (int, int):
         a = random.randint(0, len(board) - 1)
         b = random.randint(0, len(board) - 1)
@@ -227,6 +305,7 @@ class ImprovedGreedyMovePlayer(AbstractMovePlayer):
     implement get_move function with greedy move that looks only one step ahead with heuristic.
     (you can add helper functions as you want).
     """
+
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
@@ -238,8 +317,9 @@ class ImprovedGreedyMovePlayer(AbstractMovePlayer):
         for move in Move:
             new_board, done, score = commands[move](board)
             if done:
-                optional_moves_score[move] = (score - self.previous_score) + math.log2(score + 2) * (empty_cells_calc(new_board))\
-                                             + 2 * new_board [0][0] + 0.5 * new_board [0][1] + 0.25 * new_board [0][2]
+                optional_moves_score[move] = (score - self.previous_score) + math.log2(score + 2) * (
+                    empty_cells_calc(new_board)) \
+                                             + 2 * new_board[0][0] + 0.5 * new_board[0][1] + 0.25 * new_board[0][2]
                 if score > next_score:
                     next_score = score
         self.previous_score = next_score
@@ -254,6 +334,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
     implement get_move function according to MiniMax algorithm
     (you can add helper functions as you want).
     """
+
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
@@ -279,7 +360,8 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
                         # local_start = time.time()
                         # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function2(new_board))
                         # move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, moveGrader(new_board))
-                        move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER, simple_evaluation_function(new_board))
+                        move_value = self.rec_minmax(depth - 1, new_board, MIN_PLAYER,
+                                                     simple_evaluation_function(new_board))
                         # print("Move time: " + str(time.time()-local_start) + " depth: " + str(depth))
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
@@ -292,7 +374,6 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
         print(depth, file=file)
         file.close()
         return temp_max
-
 
     # TODO: add here helper functions in class, if needed
     def rec_minmax(self, depth, board, player, eval_value=0):
@@ -308,7 +389,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  #or is_final_state(board):
+        if depth == 0:  # or is_final_state(board):
             return eval_value
         # maximize
         if player == MAX_PLAYER:
@@ -316,11 +397,12 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    #optional_moves_score[move] = new_board, evaluation_function2(new_board)
-                    #optional_moves_score[move] = new_board, moveGrader(new_board)
+                    # optional_moves_score[move] = new_board, evaluation_function2(new_board)
+                    # optional_moves_score[move] = new_board, moveGrader(new_board)
                     optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
-            return return_max([self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1])\
-                               for move1 in optional_moves_score])
+            return return_max(
+                [self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1]) \
+                 for move1 in optional_moves_score])
         # minimize
         else:
             index_next_boards = []
@@ -331,7 +413,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
                 new_board[i][j] = 2
                 index_next_boards.append(new_board)
             return return_min([self.rec_minmax(depth - 1, new_board, MAX_PLAYER, eval_value) \
-                                    for new_board in index_next_boards])
+                               for new_board in index_next_boards])
 
 
 class MiniMaxIndexPlayer(AbstractIndexPlayer):
@@ -341,6 +423,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
     implement get_indices function according to MiniMax algorithm, the value in minimax player value is only 2.
     (you can add helper functions as you want).
     """
+
     def __init__(self):
         AbstractIndexPlayer.__init__(self)
         # TODO: add here if needed
@@ -367,16 +450,16 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
                 if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
                     # local_start = time.time()
                     # move_value = self.rec_minmax(depth - 1, new_board, evaluation_function(new_board, score))
-                    #move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
-                    #move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
+                    # move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
+                    # move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
                     move_value = self.rec_minmax(depth - 1, new_board, MAX_PLAYER, score)
                     # print("Index time: " + str(time.time() - local_start) + " depth: " + str(depth))
                     if move_value <= np.inf:
-                        optional_index_score[(i,j)] = move_value
+                        optional_index_score[(i, j)] = move_value
                 else:
                     return temp_min
             if self.timeout_flag is False:
-                temp_min = min(optional_index_score, key= optional_index_score.get)
+                temp_min = min(optional_index_score, key=optional_index_score.get)
         return temp_min
 
     # TODO: add here helper functions in class, if needed
@@ -394,7 +477,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0: # or is_final_state(board):
+        if depth == 0:  # or is_final_state(board):
             return eval_value
 
         # minimize
@@ -406,7 +489,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
                 j = int(tup[1])
                 new_board[i][j] = 2
                 index_next_boards.append(new_board)
-            return return_min([self.rec_minmax(depth - 1, new_board, MAX_PLAYER, eval_value)\
+            return return_min([self.rec_minmax(depth - 1, new_board, MAX_PLAYER, eval_value) \
                                for new_board in index_next_boards])
         # maximize
         else:
@@ -414,12 +497,13 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    #optional_moves_score[move] = new_board, evaluation_function(new_board, score)
-                    #optional_moves_score[move] = new_board, moveGrader(new_board)
-                    #optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
+                    # optional_moves_score[move] = new_board, evaluation_function(new_board, score)
+                    # optional_moves_score[move] = new_board, moveGrader(new_board)
+                    # optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
                     optional_moves_score[move] = new_board, score
-            return return_max([self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1])\
-                               for move1 in optional_moves_score])
+            return return_max(
+                [self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1]) \
+                 for move1 in optional_moves_score])
 
 
 # part C
@@ -429,6 +513,7 @@ class ABMovePlayer(AbstractMovePlayer):
     implement get_move function according to Alpha Beta MiniMax algorithm
     (you can add helper functions as you want)
     """
+
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
@@ -438,7 +523,7 @@ class ABMovePlayer(AbstractMovePlayer):
 
     def get_move(self, board, time_limit) -> Move:
         # TODO: erase the following line and implement this function.
-        file = open(r'C:\Users\kfir2\Documents\ab_player_2_sec.txt', 'a')
+        file = open(r'C:\Users\LENOVO\Desktop\Technion\semester10\Intro to AI\HW2\AI2-main\ab_simple_4_sec.txt', 'a')
         temp_max = Move.UP
         depth = 0
         alpha = -np.inf
@@ -453,10 +538,11 @@ class ABMovePlayer(AbstractMovePlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
-                        #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
-                        move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
-                        #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
-                        #move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
+                        move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
+                        # move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
+                        # move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
+                        # move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
+                        # move_value = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, best_heuristic(new_board))
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
                     else:
@@ -483,7 +569,7 @@ class ABMovePlayer(AbstractMovePlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  #or is_final_state(board):
+        if depth == 0:  # or is_final_state(board):
             return eval_value
 
         # maximize
@@ -493,11 +579,11 @@ class ABMovePlayer(AbstractMovePlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, score)
-                    #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
-                    #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
-                    #v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
-                    curMax = max(curMax,v)
-                    alpha = max(curMax,alpha)
+                    # v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, simple_evaluation_function(new_board))
+                    # v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, evaluation_function2(new_board))
+                    # v = self.rec_ab(depth - 1, new_board, alpha, beta, MIN_PLAYER, moveGrader(new_board))
+                    curMax = max(curMax, v)
+                    alpha = max(curMax, alpha)
                     if curMax >= beta:
                         return np.inf
             return curMax
@@ -511,9 +597,9 @@ class ABMovePlayer(AbstractMovePlayer):
                 j = int(tup[1])
                 new_board[i][j] = 2
                 v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, eval_value)
-                #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, simple_evaluation_function(new_board))
-                #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, evaluation_function2(new_board))
-                #v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, moveGrader(new_board))
+                # v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, simple_evaluation_function(new_board))
+                # v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, evaluation_function2(new_board))
+                # v = self.rec_ab(depth - 1, new_board, alpha, beta, MAX_PLAYER, moveGrader(new_board))
                 curMin = min(curMin, v)
                 beta = min(curMin, beta)
                 if curMin <= alpha:
@@ -527,6 +613,7 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
     implement get_move function according to Expectimax algorithm.
     (you can add helper functions as you want)
     """
+
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
@@ -573,7 +660,7 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  #or is_final_state(board):
+        if depth == 0:  # or is_final_state(board):
             return eval_value
         # maximize
         if player == MAX_PLAYER:
@@ -584,8 +671,9 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
                     # optional_moves_score[move] = new_board, evaluation_function2(new_board)
                     optional_moves_score[move] = new_board, moveGrader(new_board)
                     # optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
-            return return_max([self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1])\
-                               for move1 in optional_moves_score])
+            return return_max(
+                [self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1]) \
+                 for move1 in optional_moves_score])
         # minimize
         elif player == MIN_PLAYER:
             index_next_boards = []
@@ -596,8 +684,8 @@ class ExpectimaxMovePlayer(AbstractMovePlayer):
                 new_board[i][j] = index_value
                 index_next_boards.append(new_board)
             return return_min([self.rec_expect(depth - 1, new_board, MAX_PLAYER, eval_value) \
-                                    for new_board in index_next_boards])
-        #prob
+                               for new_board in index_next_boards])
+        # prob
         else:
             return TWO_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 2) + \
                    FOUR_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 4)
@@ -608,6 +696,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
     implement get_indices function according to Expectimax algorithm, the value is number between {2,4}.
     (you can add helper functions as you want)
     """
+
     def __init__(self):
         AbstractIndexPlayer.__init__(self)
         # TODO: add here if needed
@@ -636,7 +725,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
                     # move_value = self.rec_expect(depth - 1, new_board, evaluation_function(new_board, score))
                     move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, moveGrader(new_board))
                     # move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, simple_evaluation_function(new_board))
-                    #move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, score)
+                    # move_value = self.rec_expect(depth - 1, new_board, MAX_PLAYER, score)
                     if move_value <= np.inf:
                         optional_index_score[(i, j)] = move_value
                 else:
@@ -659,7 +748,7 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  #or is_final_state(board):
+        if depth == 0:  # or is_final_state(board):
             return eval_value
         # maximize
         if player == MAX_PLAYER:
@@ -667,11 +756,12 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    #optional_moves_score[move] = new_board, evaluation_function2(new_board)
+                    # optional_moves_score[move] = new_board, evaluation_function2(new_board)
                     optional_moves_score[move] = new_board, moveGrader(new_board)
-                    #optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
-            return return_max([self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1])\
-                               for move1 in optional_moves_score])
+                    # optional_moves_score[move] = new_board, simple_evaluation_function(new_board)
+            return return_max(
+                [self.rec_expect(depth - 1, optional_moves_score[move1][0], PROB_STATE, optional_moves_score[move1][1]) \
+                 for move1 in optional_moves_score])
         # minimize
         elif player == MIN_PLAYER:
             index_next_boards = []
@@ -682,11 +772,12 @@ class ExpectimaxIndexPlayer(AbstractIndexPlayer):
                 new_board[i][j] = index_value
                 index_next_boards.append(new_board)
             return return_min([self.rec_expect(depth - 1, new_board, MAX_PLAYER, eval_value) \
-                                    for new_board in index_next_boards])
-        #prob
+                               for new_board in index_next_boards])
+        # prob
         else:
             return TWO_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 2) + \
                    FOUR_PROBABILITY * self.rec_expect(depth - 1, board, MIN_PLAYER, eval_value, 4)
+
 
 # Tournament
 class ContestMovePlayer(AbstractMovePlayer):
@@ -694,6 +785,7 @@ class ContestMovePlayer(AbstractMovePlayer):
     implement get_move function as you want to compete in the Tournament
     (you can add helper functions as you want)
     """
+
     def __init__(self):
         AbstractMovePlayer.__init__(self)
         # TODO: add here if needed
@@ -703,4 +795,3 @@ class ContestMovePlayer(AbstractMovePlayer):
         raise NotImplementedError
 
     # TODO: add here helper functions in class, if needed
-
