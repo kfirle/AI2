@@ -1,4 +1,5 @@
 python main.py -player1 ImprovedGreedyMovePlayer -player2 RandomIndexPlayer
-python main.py -player1 MiniMaxMovePlayer -player2 MiniMaxIndexPlayer -move_time 1
+python main.py -player1 MiniMaxMovePlayer -player2 MiniMaxIndexPlayer -move_time 2
 python main.py -player1 ABMovePlayer -player2 MiniMaxIndexPlayer -move_time 1
 python main.py -player1 ExpectimaxMovePlayer -player2 ExpectimaxIndexPlayer -move_time 1
+python main.py -player1 ContestMovePlayer -player2 MiniMaxIndexPlayer -move_time 1

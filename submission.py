@@ -22,16 +22,7 @@ PROB_STATE = 2
 TWO_PROBABILITY = 0.9
 FOUR_PROBABILITY = 0.1
 victory_value = 2048
-TIME_MARGIN = 0.01
-
-
-def empty_cells_calc(board) -> int:
-    empty_cells = 0
-    for i in range(0, len(board)):
-        for j in range(0, len(board)):
-            if board[i][j] == 0:
-                empty_cells += 1
-    return empty_cells
+TIME_MARGIN = 0.05
 
 
 def board_score_calc(board) -> int:
@@ -43,10 +34,6 @@ def board_score_calc(board) -> int:
                 score += current
                 current = current / 2
     return score
-
-
-def simple_evaluation_function(board):
-    return 2 * board[0][0] + 0.5 * board[0][1] + 0.25 * board[0][2]
 
 
 def get_empty_indices(board) -> [(int, int)]:
@@ -76,82 +63,6 @@ def return_min(successors_values):
     if len(successors_values) == 0:
         return np.inf
     return min(successors_values)
-
-
-def best_heuristic(board):
-    """
-    Weights for the different Heuristics
-    """
-    empty_weight = 25
-    highest_weight = 10
-    score_weight = 14
-    uniformity_weight = 1
-    direction_weight = 15
-
-    # Calc Highest Tile Score
-    highest_score = max(max(x) for x in board) * highest_weight
-
-    # Calc Empty Cells Score
-    empty_cells = 0
-    for i in range(0, len(board)):
-        for j in range(0, len(board)):
-            if board[i][j] == 0:
-                empty_cells += 1
-    if empty_cells != 0:
-        empty_cells = math.log(empty_cells)
-    empty_score = empty_cells * empty_weight
-
-    # Calc Score (heuristic) Score
-    score = 0
-    for row in range(0, 4):
-        for col in range(0, 4):
-            if board[row][col] != 0:
-                score -= math.log2(board[row][col])
-    score_score = score * score_weight
-
-    # Calc Direction Score
-    log_grid = [[0 for i in range(4)] for j in range(4)]
-    for row in range(0, 4):
-        for col in range(0, 4):
-            if board[row][col] != 0:
-                log_grid[row][col] = math.log2(board[row][col])
-            else:
-                log_grid[row][col] = 0
-
-    asc_vertical = 0
-    desc_vertical = 0
-    asc_horizontal = 0
-    desc_horizontal = 0
-    for row in range(4):
-        for col in range(4):
-            if col + 1 < 4:
-                if log_grid[row][col] > log_grid[row][col + 1]:
-                    desc_horizontal -= log_grid[row][col] - log_grid[row][col + 1]
-                else:
-                    asc_horizontal += log_grid[row][col] - log_grid[row][col + 1]
-            if row + 1 < 4:
-                if log_grid[row][col] > log_grid[row + 1][col]:
-                    desc_vertical -= log_grid[row][col] - log_grid[row + 1][col]
-                else:
-                    asc_vertical += log_grid[row][col] - log_grid[row + 1][col]
-    direction_score = (max(desc_horizontal, asc_horizontal) + max(desc_vertical, asc_vertical)) * direction_weight
-
-    # Calc Uniformity Score
-    copy_grid = deepcopy(board)
-    bonus = 0
-    for row in range(4):
-        for col in range(4):
-            if copy_grid[row][col] != 0:
-                if copy_grid[row][3] != 0:
-                    bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
-                        copy_grid[row][3]))
-                if copy_grid[3][col] != 0:
-                    bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
-                        copy_grid[3][col]))
-
-    uniformity_score = -bonus * uniformity_weight
-
-    return empty_score + direction_score + score_score + highest_score + uniformity_score
 
 
 # generate value between {2,4} with probability p for 4
@@ -208,12 +119,20 @@ class ImprovedGreedyMovePlayer(AbstractMovePlayer):
             new_board, done, score = commands[move](board)
             if done:
                 optional_moves_score[move] = (score - self.previous_score) + math.log2(score + 2) * (
-                    empty_cells_calc(new_board)) \
+                    self.empty_cells_calc(new_board)) \
                                              + 2 * new_board[0][0] + 0.5 * new_board[0][1] + 0.25 * new_board[0][2]
                 if score > next_score:
                     next_score = score
         self.previous_score = next_score
         return max(optional_moves_score, key=optional_moves_score.get)
+
+    def empty_cells_calc(self, board) -> int:
+        empty_cells = 0
+        for i in range(0, len(board)):
+            for j in range(0, len(board)):
+                if board[i][j] == 0:
+                    empty_cells += 1
+        return empty_cells
 
 
 # part B
@@ -230,8 +149,6 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
         self.timeout_flag = False
 
     def get_move(self, board, time_limit) -> Move:
-        # TODO: erase printing
-        file = open(r'C:\Users\kfir2\Documents\minmax_player_1_sec.txt', 'a')
         temp_max = Move.UP
         depth = 0
         self.iteration_start_time = time.time()
@@ -248,13 +165,9 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
                     else:
-                        print(depth, file=file)
-                        file.close()
                         return temp_max
             if self.timeout_flag is False:
                 temp_max = max(optional_moves_score, key=optional_moves_score.get)
-        print(depth, file=file)
-        file.close()
         return temp_max
 
     def rec_minmax(self, depth, board, player, eval_value=0):
@@ -263,9 +176,9 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  # or is_final_state(board):
+        if depth == 0:
             return eval_value
-        # maximize
+
         if player == MAX_PLAYER:
             optional_moves_score = {}
             for move in Move:
@@ -275,7 +188,7 @@ class MiniMaxMovePlayer(AbstractMovePlayer):
             return return_max(
                 [self.rec_minmax(depth - 1, optional_moves_score[move1][0], MIN_PLAYER, optional_moves_score[move1][1]) \
                  for move1 in optional_moves_score])
-        # minimize
+        # min_player
         else:
             index_next_boards = []
             for tup in get_empty_indices(board):
@@ -337,7 +250,6 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
         if depth == 0:
             return eval_value
 
-        # minimize
         if player == MIN_PLAYER:
             index_next_boards = []
             for tup in get_empty_indices(board):
@@ -348,7 +260,7 @@ class MiniMaxIndexPlayer(AbstractIndexPlayer):
                 index_next_boards.append(new_board)
             return return_min([self.rec_minmax(depth - 1, new_board, MAX_PLAYER, eval_value) \
                                for new_board in index_next_boards])
-        # maximize
+        # max_player
         else:
             optional_moves_score = {}
             for move in Move:
@@ -375,8 +287,6 @@ class ABMovePlayer(AbstractMovePlayer):
         self.timeout_flag = False
 
     def get_move(self, board, time_limit) -> Move:
-        # TODO: erase printing
-        file = open(r'C:\Users\LENOVO\Desktop\Technion\semester10\Intro to AI\HW2\AI2-main\ab_simple_4_sec.txt', 'a')
         temp_max = Move.UP
         depth = 0
         alpha = -np.inf
@@ -395,13 +305,9 @@ class ABMovePlayer(AbstractMovePlayer):
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
                     else:
-                        print(depth, file=file)
-                        file.close()
                         return temp_max
             if self.timeout_flag is False:
                 temp_max = max(optional_moves_score, key=optional_moves_score.get)
-        print(depth, file=file)
-        file.close()
         return temp_max
 
     def rec_ab(self, depth, board, alpha, beta, player, eval_value=0):
@@ -410,7 +316,7 @@ class ABMovePlayer(AbstractMovePlayer):
             self.timeout_flag = True
             return eval_value
 
-        if depth == 0:  # or is_final_state(board):
+        if depth == 0:
             return eval_value
 
         # maximize
@@ -613,7 +519,7 @@ class ContestMovePlayer(AbstractMovePlayer):
                 new_board, done, score = commands[move](board)
                 if done:
                     if time.time() - self.iteration_start_time < time_limit - TIME_MARGIN:
-                        move_value = self.rec_ab_tournament(depth - 1, new_board, alpha, beta, MIN_PLAYER, best_heuristic(new_board))
+                        move_value = self.rec_ab_tournament(depth - 1, new_board, alpha, beta, MIN_PLAYER, self.best_heuristic(new_board))
                         if move_value >= -np.inf:
                             optional_moves_score[move] = move_value
                     else:
@@ -621,6 +527,81 @@ class ContestMovePlayer(AbstractMovePlayer):
             if self.timeout_flag is False:
                 temp_max = max(optional_moves_score, key=optional_moves_score.get)
         return temp_max
+
+    def best_heuristic(self,board):
+        """
+        Weights for the Heuristic's parameters
+        """
+        empty_weight = 25
+        highest_weight = 10
+        score_weight = 14
+        uniformity_weight = 1
+        direction_weight = 15
+
+        # Calc Highest Tile Score
+        highest_score = max(max(x) for x in board) * highest_weight
+
+        # Calc Empty Cells Score
+        empty_cells = 0
+        for i in range(0, len(board)):
+            for j in range(0, len(board)):
+                if board[i][j] == 0:
+                    empty_cells += 1
+        if empty_cells != 0:
+            empty_cells = math.log(empty_cells)
+        empty_score = empty_cells * empty_weight
+
+        # Calc Score (heuristic) Score
+        score = 0
+        for row in range(0, 4):
+            for col in range(0, 4):
+                if board[row][col] != 0:
+                    score -= math.log2(board[row][col])
+        score_score = score * score_weight
+
+        # Calc Direction Score
+        log_grid = [[0 for i in range(4)] for j in range(4)]
+        for row in range(0, 4):
+            for col in range(0, 4):
+                if board[row][col] != 0:
+                    log_grid[row][col] = math.log2(board[row][col])
+                else:
+                    log_grid[row][col] = 0
+
+        asc_vertical = 0
+        desc_vertical = 0
+        asc_horizontal = 0
+        desc_horizontal = 0
+        for row in range(4):
+            for col in range(4):
+                if col + 1 < 4:
+                    if log_grid[row][col] > log_grid[row][col + 1]:
+                        desc_horizontal -= log_grid[row][col] - log_grid[row][col + 1]
+                    else:
+                        asc_horizontal += log_grid[row][col] - log_grid[row][col + 1]
+                if row + 1 < 4:
+                    if log_grid[row][col] > log_grid[row + 1][col]:
+                        desc_vertical -= log_grid[row][col] - log_grid[row + 1][col]
+                    else:
+                        asc_vertical += log_grid[row][col] - log_grid[row + 1][col]
+        direction_score = (max(desc_horizontal, asc_horizontal) + max(desc_vertical, asc_vertical)) * direction_weight
+
+        # Calc Uniformity Score
+        copy_grid = deepcopy(board)
+        bonus = 0
+        for row in range(4):
+            for col in range(4):
+                if copy_grid[row][col] != 0:
+                    if copy_grid[row][3] != 0:
+                        bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
+                            copy_grid[row][3]))
+                    if copy_grid[3][col] != 0:
+                        bonus += abs(math.log2(copy_grid[row][col]) - math.log2(
+                            copy_grid[3][col]))
+
+        uniformity_score = -bonus * uniformity_weight
+
+        return empty_score + direction_score + score_score + highest_score + uniformity_score
 
     def rec_ab_tournament(self, depth, board, alpha, beta, player, eval_value=0):
         # if no time left
@@ -631,20 +612,19 @@ class ContestMovePlayer(AbstractMovePlayer):
         if depth == 0:
             return eval_value
 
-        # maximize
         if player == MAX_PLAYER:
             curMax = -np.inf
             for move in Move:
                 new_board, done, score = commands[move](board)
                 if done:
-                    v = self.rec_ab_tournament(depth - 1, new_board, alpha, beta, MIN_PLAYER, best_heuristic(new_board))
+                    v = self.rec_ab_tournament(depth - 1, new_board, alpha, beta, MIN_PLAYER, self.best_heuristic(new_board))
                     curMax = max(curMax, v)
                     alpha = max(curMax, alpha)
                     if curMax >= beta:
                         return np.inf
             return curMax
 
-        # minimize
+        # min_player
         else:
             curMin = np.inf
             for tup in get_empty_indices(board):
@@ -658,3 +638,4 @@ class ContestMovePlayer(AbstractMovePlayer):
                 if curMin <= alpha:
                     return -np.inf
             return curMin
+
